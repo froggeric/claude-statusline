@@ -1,0 +1,34 @@
+{
+  "model": {"display_name": "Opus 4.5", "id": "claude-opus-4-5"},
+  "context_window": {
+    "context_window_size": 200000,
+    "used_percentage": 40,
+    "remaining_percentage": 60,
+    "current_usage": {
+      "input_tokens": 50000,
+      "output_tokens": 30000,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0
+    }
+  },
+  "cost": {
+    "total_cost_usd": 1.50,
+    "total_duration_ms": 300000,
+    "total_api_duration_ms": 200000,
+    "total_lines_added": 10,
+    "total_lines_removed": 2
+  },
+  "workspace": {
+    "current_dir": "/home/user/github/my-app/src/components",
+    "project_dir": "/home/user/github/my-app"
+  },
+  "session_id": "test-session-cwd-subdir",
+  "session_name": "",
+  "exceeds_200k_tokens": false,
+  "rate_limits": {
+    "five_hour": {"used_percentage": "", "resets_at": ""},
+    "seven_day": {"used_percentage": "", "resets_at": ""}
+  },
+  "agent": {"name": ""},
+  "worktree": {"name": "", "branch": ""}
+}

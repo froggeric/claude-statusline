@@ -270,6 +270,81 @@ assert_not_contains "$output" "5h:95%" "auto-hide: respects explicit CLAUDE_SL_R
 echo ""
 
 # ============================================================
+echo -e "${BOLD}[CWD — Subdirectory]${RESET}"
+# ============================================================
+
+# current_dir is a subdirectory of project_dir → relative path is shorter
+output=$(run_statusline "$TESTS_DIR/mock-cwd-subdir.json" \
+    CLAUDE_SL_LAYOUT=detailed \
+    CLAUDE_SL_PROJECT=1 \
+    CLAUDE_SL_CWD=1 \
+    CLAUDE_SL_MODEL=1 \
+    CLAUDE_SL_BAR=0 \
+    CLAUDE_SL_PERCENT=0 \
+    NO_COLOR=1)
+
+assert_contains "$output" "src/components" "cwd-subdir: shows relative path (shorter than absolute)"
+assert_not_contains "$output" "/home/user/github/my-app/src/components" "cwd-subdir: does not show full absolute path"
+
+echo ""
+
+# ============================================================
+echo -e "${BOLD}[CWD — Same as project]${RESET}"
+# ============================================================
+
+# current_dir == project_dir → CWD_DISPLAY should be empty (PROJECT_NAME handles it)
+output=$(run_statusline "$TESTS_DIR/mock-compact.json" \
+    CLAUDE_SL_LAYOUT=detailed \
+    CLAUDE_SL_PROJECT=1 \
+    CLAUDE_SL_CWD=1 \
+    CLAUDE_SL_MODEL=1 \
+    CLAUDE_SL_BAR=0 \
+    CLAUDE_SL_PERCENT=0 \
+    NO_COLOR=1)
+
+assert_contains "$output" "my-app" "cwd-same: shows project name"
+# When current_dir == project_dir, CWD is hidden (redundant with project name)
+assert_not_contains "$output" "/home/user/github/my-app" "cwd-same: hides redundant CWD (same as project)"
+
+echo ""
+
+# ============================================================
+echo -e "${BOLD}[CWD — External directory]${RESET}"
+# ============================================================
+
+# current_dir is outside project_dir → shows absolute path (with ~ for home)
+output=$(run_statusline "$TESTS_DIR/mock-cwd-external.json" \
+    CLAUDE_SL_LAYOUT=detailed \
+    CLAUDE_SL_PROJECT=1 \
+    CLAUDE_SL_CWD=1 \
+    CLAUDE_SL_MODEL=1 \
+    CLAUDE_SL_BAR=0 \
+    CLAUDE_SL_PERCENT=0 \
+    NO_COLOR=1)
+
+assert_contains "$output" "/tmp/other-project" "cwd-external: shows absolute path for external dir"
+assert_contains "$output" "my-app" "cwd-external: also shows project name"
+
+echo ""
+
+# ============================================================
+echo -e "${BOLD}[CWD — Smart auto-show in compact]${RESET}"
+# ============================================================
+
+# When current_dir differs from project_dir, CWD auto-shows in compact even if default is off
+output=$(run_statusline "$TESTS_DIR/mock-cwd-subdir.json" \
+    CLAUDE_SL_LAYOUT=compact \
+    CLAUDE_SL_PROJECT=1 \
+    CLAUDE_SL_MODEL=1 \
+    CLAUDE_SL_BAR=0 \
+    CLAUDE_SL_PERCENT=0 \
+    NO_COLOR=1)
+
+assert_contains "$output" "src/components" "cwd-auto: auto-shows CWD when it differs from project"
+
+echo ""
+
+# ============================================================
 # Summary
 # ============================================================
 echo -e "${BOLD}════════════════════════════════════════${RESET}"

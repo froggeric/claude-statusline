@@ -49,7 +49,7 @@ The statusline uses `│` pipe separators to divide information into 4 visual ch
 
 | # | Env Var | Default (C/D/M) | Auto-hide |
 |---|---------|---------|-----------|
-| 1 | `CLAUDE_SL_CWD` | 0/1/1 | if empty |
+| 1 | `CLAUDE_SL_CWD` | 0/1/1 | if same as project dir; auto-shows in compact when different |
 | 2 | `CLAUDE_SL_PROJECT` | 1/1/1 | if empty |
 | 3 | `CLAUDE_SL_BRANCH` | 1/1/1 | if not git repo |
 | 4 | `CLAUDE_SL_GIT_STATUS` | 1/1/1 | if no staged/modified files |
@@ -86,11 +86,19 @@ Defaults: **C**ompact / **D**etailed / **M**ultiline
 
 ## Smart Auto-Hide
 
-In compact mode, rate limits auto-show when usage reaches ≥70%, even if toggled off. This prevents surprises when approaching limits. Explicit user settings always take precedence over auto-hide rules.
+In compact mode, items auto-show based on context — even if toggled off:
+- **Rate limits** auto-show when usage reaches ≥70%
+- **CWD** auto-shows when the current directory differs from the project directory
+
+Explicit user settings always take precedence over auto-hide rules.
 
 ### Git File Status
 
 Shows staged (`+N`, green) and modified (`~N`, yellow) file counts inline with the branch name. Cached per session with a 5-second TTL.
+
+### Current Directory
+
+When the current directory differs from the project directory, shows the shortest path — relative (e.g., `src/components`) or absolute with `~` for home (e.g., `/tmp/other-project`). When they're the same, CWD hides to avoid redundancy with the project name.
 
 ### Rate Limit Countdown
 

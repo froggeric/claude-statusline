@@ -261,9 +261,31 @@ else
 fi
 
 if [ -n "$CURRENT_DIR" ]; then
-    CWD_DISPLAY="${CURRENT_DIR/#$HOME/~}"
+    if [ "$CURRENT_DIR" = "$PROJECT_DIR" ]; then
+        # Same as project — already shown by PROJECT_NAME
+        CWD_DISPLAY=""
+    else
+        # Different from project — compute shortest representation
+        local_relative=""
+        if [[ "$CURRENT_DIR" == "$PROJECT_DIR"/* ]]; then
+            local_relative="${CURRENT_DIR#$PROJECT_DIR/}"
+        fi
+        local_absolute="${CURRENT_DIR/#$HOME/~}"
+        if [ -n "$local_relative" ] && [ "${#local_relative}" -lt "${#local_absolute}" ]; then
+            CWD_DISPLAY="$local_relative"
+        else
+            CWD_DISPLAY="$local_absolute"
+        fi
+    fi
 else
     CWD_DISPLAY=""
+fi
+
+# Smart auto-show CWD when it differs from project dir (compact mode)
+if [ "$LAYOUT" = "compact" ] && [ -n "$CWD_DISPLAY" ]; then
+    if [ -z "$_EXT_CWD" ] && ! grep -q "^export CLAUDE_SL_CWD=" "$CONFIG_FILE" 2>/dev/null; then
+        CLAUDE_SL_CWD=1
+    fi
 fi
 
 # ============================================
