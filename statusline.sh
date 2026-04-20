@@ -347,13 +347,9 @@ fi
 format_tokens() {
     local num=${1:-0}
     if [ "$num" -ge 1000000 ] 2>/dev/null; then
-        local int_part=$((num / 1000000))
-        local dec_part=$(( (num % 1000000) / 100000 ))
-        [ "$dec_part" -eq 0 ] && echo "${int_part}M" || echo "${int_part}.${dec_part}M"
+        echo "$(( (num + 500000) / 1000000 ))M"
     elif [ "$num" -ge 1000 ] 2>/dev/null; then
-        local int_part=$((num / 1000))
-        local dec_part=$(( (num % 1000) / 100 ))
-        [ "$dec_part" -eq 0 ] && echo "${int_part}K" || echo "${int_part}.${dec_part}K"
+        echo "$(( (num + 500) / 1000 ))K"
     else
         echo "${num}"
     fi
@@ -480,7 +476,7 @@ fi
 # ============================================
 # Progress bar
 # ============================================
-BAR_WIDTH=15
+BAR_WIDTH=10
 if [ "$USED_PCT_INT" -gt 100 ]; then
     FILLED=$BAR_WIDTH
 else

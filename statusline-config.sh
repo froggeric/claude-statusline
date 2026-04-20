@@ -283,7 +283,7 @@ ITEMS=(
     "CLAUDE_SL_MODEL:L_MODEL:[Opus 4.5]      "
     "CLAUDE_SL_AGENT:L_AGENT:reviewer          "
     # Health
-    "CLAUDE_SL_BAR:L_BAR:[████░░░░░░░░░]"
+    "CLAUDE_SL_BAR:L_BAR:[████░░░░░░]"
     "CLAUDE_SL_PERCENT:L_PERCENT:62%             "
     "CLAUDE_SL_TOKENS:L_TOKENS:(124K/200K)     "
     "CLAUDE_SL_COST:L_COST:\$3.47            "
@@ -506,7 +506,7 @@ draw_menu() {
     [ "$show_model" = "1" ] && chunk_capability="${chunk_capability}${CYAN}]${RESET}"
 
     # Health chunk
-    [ "$show_bar" = "1" ] && chunk_health="${chunk_health}${GREEN}[████░░░░░░░░░]${RESET} "
+    [ "$show_bar" = "1" ] && chunk_health="${chunk_health}${GREEN}[████░░░░░░]${RESET} "
     [ "$show_percent" = "1" ] && chunk_health="${chunk_health}${GREEN}62%${RESET} "
     [ "$show_tokens" = "1" ] && chunk_health="${chunk_health}${DIM}(124K/200K)${RESET} "
     [ "$show_cost" = "1" ] && chunk_health="${chunk_health}${MAGENTA}\$3.47${RESET} "
