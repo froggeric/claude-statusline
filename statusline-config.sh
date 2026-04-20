@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude Code Statusline Configuration Tool v8
+# Claude Code Statusline Configuration Tool v7
 # Section-grouped display, layout mode cycling, 17 toggle items
 # Keyboard: arrows to move, space/enter to toggle, L to cycle layout, s to save, q to quit
 
@@ -16,6 +16,7 @@ load_config() {
     CLAUDE_SL_CWD=${CLAUDE_SL_CWD:-}
     CLAUDE_SL_PROJECT=${CLAUDE_SL_PROJECT:-}
     CLAUDE_SL_BRANCH=${CLAUDE_SL_BRANCH:-}
+    CLAUDE_SL_GIT_STATUS=${CLAUDE_SL_GIT_STATUS:-}
     CLAUDE_SL_SESSION=${CLAUDE_SL_SESSION:-}
     CLAUDE_SL_WORKTREE=${CLAUDE_SL_WORKTREE:-}
     CLAUDE_SL_MODEL=${CLAUDE_SL_MODEL:-}
@@ -40,6 +41,7 @@ LAYOUT_DEFAULTS=(
     "CLAUDE_SL_CWD:0:1:1"
     "CLAUDE_SL_PROJECT:1:1:1"
     "CLAUDE_SL_BRANCH:1:1:1"
+    "CLAUDE_SL_GIT_STATUS:1:1:1"
     "CLAUDE_SL_SESSION:0:1:1"
     "CLAUDE_SL_WORKTREE:0:1:1"
     "CLAUDE_SL_MODEL:1:1:1"
@@ -85,7 +87,7 @@ resolve_var() {
 # ============================================
 set_i18n() {
     if [ "$CLAUDE_SL_LANG" = "ko" ]; then
-        I18N_TITLE="Claude Code Statusline 설정 v8"
+        I18N_TITLE="Claude Code Statusline 설정 v7"
         I18N_HELP="↑↓ 이동 | Space 토글 | L 레이아웃 | s 저장 | q 나가기"
         I18N_PREVIEW="미리보기:"
         I18N_ALL_HIDDEN="(모든 항목이 숨겨짐)"
@@ -94,6 +96,7 @@ set_i18n() {
         I18N_SECTION_IDENTITY="[ 아이덴티티 ]"
         I18N_SECTION_CAPABILITY="[ 기능 ]"
         I18N_SECTION_HEALTH="[ 상태 ]"
+        I18N_SECTION_ACTIVITY="[ 활동 ]"
         I18N_LAYOUT_LABEL="레이아웃"
         I18N_LANG_LABEL="언어"
         I18N_LANG_VALUE="한국어"
@@ -106,6 +109,7 @@ set_i18n() {
         L_CWD="작업 디렉토리  "
         L_PROJECT="프로젝트        "
         L_BRANCH="Git 브랜치     "
+        L_GIT_STATUS="Git 상태       "
         L_SESSION="세션 이름      "
         L_WORKTREE="워크트리       "
         L_MODEL="모델명          "
@@ -120,7 +124,7 @@ set_i18n() {
         L_DURATION="세션 시간      "
         L_CACHE="캐시 효율       "
     else
-        I18N_TITLE="Claude Code Statusline Settings v8"
+        I18N_TITLE="Claude Code Statusline Settings v7"
         I18N_HELP="Arrows: Move | Space: Toggle | L: Layout | s: Save | q: Quit"
         I18N_PREVIEW="Preview:"
         I18N_ALL_HIDDEN="(All items hidden)"
@@ -129,6 +133,7 @@ set_i18n() {
         I18N_SECTION_IDENTITY="[ IDENTITY ]"
         I18N_SECTION_CAPABILITY="[ CAPABILITY ]"
         I18N_SECTION_HEALTH="[ HEALTH ]"
+        I18N_SECTION_ACTIVITY="[ ACTIVITY ]"
         I18N_LAYOUT_LABEL="Layout"
         I18N_LANG_LABEL="Language"
         I18N_LANG_VALUE="English"
@@ -140,6 +145,7 @@ set_i18n() {
         L_CWD="Directory   "
         L_PROJECT="Project     "
         L_BRANCH="Git Branch  "
+        L_GIT_STATUS="Git Status   "
         L_SESSION="Session     "
         L_WORKTREE="Worktree    "
         L_MODEL="Model       "
@@ -178,6 +184,7 @@ ITEMS=(
     "CLAUDE_SL_CWD:L_CWD:~/github/app    "
     "CLAUDE_SL_PROJECT:L_PROJECT:my-app         "
     "CLAUDE_SL_BRANCH:L_BRANCH:main            "
+    "CLAUDE_SL_GIT_STATUS:L_GIT_STATUS:+2~5            "
     "CLAUDE_SL_SESSION:L_SESSION:feature-auth   "
     "CLAUDE_SL_WORKTREE:L_WORKTREE:wt:feat-x      "
     # Capability
@@ -196,8 +203,8 @@ ITEMS=(
 )
 
 # Section break indices (insert section header before these item indices)
-SECTION_HEADERS="0:5:7"
-SECTION_LABELS_VAR="I18N_SECTION_IDENTITY:I18N_SECTION_CAPABILITY:I18N_SECTION_HEALTH"
+SECTION_HEADERS="0:6:8:14"
+SECTION_LABELS_VAR="I18N_SECTION_IDENTITY:I18N_SECTION_CAPABILITY:I18N_SECTION_HEALTH:I18N_SECTION_ACTIVITY"
 
 # ============================================
 # Navigation state
@@ -248,7 +255,7 @@ cycle_lang() {
 save_config() {
     mkdir -p "$(dirname "$CONFIG_FILE")"
     cat > "$CONFIG_FILE" << EOF
-# Claude Code Statusline v8 Configuration
+# Claude Code Statusline v7 Configuration
 # Layout mode: compact / detailed / multiline
 # Toggle items are only written here when changed from layout defaults.
 export CLAUDE_SL_LAYOUT=$CLAUDE_SL_LAYOUT
@@ -349,13 +356,13 @@ draw_menu() {
     echo -e "${DIM}──────────────────────────────────────────────────────────────────${RESET}"
     echo ""
 
-    # Preview
+    # Preview (chunk-based layout matching v7)
     echo -e "${CYAN}${I18N_PREVIEW}${RESET}"
-    local preview=""
 
     local show_cwd=$(resolve_var CLAUDE_SL_CWD)
     local show_project=$(resolve_var CLAUDE_SL_PROJECT)
     local show_branch=$(resolve_var CLAUDE_SL_BRANCH)
+    local show_git_status=$(resolve_var CLAUDE_SL_GIT_STATUS)
     local show_session=$(resolve_var CLAUDE_SL_SESSION)
     local show_worktree=$(resolve_var CLAUDE_SL_WORKTREE)
     local show_model=$(resolve_var CLAUDE_SL_MODEL)
@@ -370,23 +377,50 @@ draw_menu() {
     local show_duration=$(resolve_var CLAUDE_SL_DURATION)
     local show_cache=$(resolve_var CLAUDE_SL_CACHE)
 
-    [ "$show_project" = "1" ] && preview="${preview}${BOLD}my-app${RESET} "
-    [ "$show_cwd" = "1" ] && preview="${preview}${DIM}~/github/app${RESET} "
-    [ "$show_branch" = "1" ] && preview="${preview}main "
-    [ "$show_session" = "1" ] && preview="${preview}${CYAN}feature-auth${RESET} "
-    [ "$show_worktree" = "1" ] && preview="${preview}${YELLOW}wt:feat-x${RESET} "
-    [ "$show_model" = "1" ] && preview="${preview}${CYAN}[Opus 4.5${RESET}"
-    [ "$show_agent" = "1" ] && preview="${preview}${MAGENTA}/reviewer${RESET}"
-    [ "$show_model" = "1" ] && preview="${preview}${CYAN}]${RESET} "
-    [ "$show_bar" = "1" ] && preview="${preview}${GREEN}[████░░░░░░░░░]${RESET} "
-    [ "$show_percent" = "1" ] && preview="${preview}${GREEN}62%${RESET} "
-    [ "$show_tokens" = "1" ] && preview="${preview}${DIM}(124K/200K)${RESET} "
-    [ "$show_cost" = "1" ] && preview="${preview}${MAGENTA}\$3.47${RESET} "
-    [ "$show_velocity" = "1" ] && preview="${preview}${GREEN}+156${RESET}${RED}-23${RESET} "
-    [ "$show_rate_5h" = "1" ] && preview="${preview}${DIM}5h:24%${RESET} "
-    [ "$show_rate_7d" = "1" ] && preview="${preview}${DIM}7d:41%${RESET} "
-    [ "$show_duration" = "1" ] && preview="${preview}${DIM}12m${RESET} "
-    [ "$show_cache" = "1" ] && preview="${preview}${CYAN}⚡96%${RESET}"
+    local SEP="${DIM}│${RESET}"
+    local chunk_identity="" chunk_capability="" chunk_health="" chunk_activity=""
+
+    # Identity chunk
+    [ "$show_project" = "1" ] && chunk_identity="${chunk_identity}${BOLD}my-app${RESET} "
+    [ "$show_cwd" = "1" ] && chunk_identity="${chunk_identity}${DIM}~/github/app${RESET} "
+    [ "$show_branch" = "1" ] && chunk_identity="${chunk_identity}main"
+    [ "$show_git_status" = "1" ] && chunk_identity="${chunk_identity} ${GREEN}+2${RESET}${YELLOW}~5${RESET}"
+    [ "$show_branch" = "1" ] || [ "$show_git_status" = "1" ] && chunk_identity="${chunk_identity} "
+    [ "$show_session" = "1" ] && chunk_identity="${chunk_identity}${CYAN}feature-auth${RESET} "
+    [ "$show_worktree" = "1" ] && chunk_identity="${chunk_identity}${YELLOW}wt:feat-x${RESET} "
+    chunk_identity="${chunk_identity% }"
+
+    # Capability chunk
+    [ "$show_model" = "1" ] && chunk_capability="${chunk_capability}${CYAN}[Opus 4.5${RESET}"
+    [ "$show_agent" = "1" ] && chunk_capability="${chunk_capability}${MAGENTA}/reviewer${RESET}"
+    [ "$show_model" = "1" ] && chunk_capability="${chunk_capability}${CYAN}]${RESET}"
+
+    # Health chunk
+    [ "$show_bar" = "1" ] && chunk_health="${chunk_health}${GREEN}[████░░░░░░░░░]${RESET} "
+    [ "$show_percent" = "1" ] && chunk_health="${chunk_health}${GREEN}62%${RESET} "
+    [ "$show_tokens" = "1" ] && chunk_health="${chunk_health}${DIM}(124K/200K)${RESET} "
+    [ "$show_cost" = "1" ] && chunk_health="${chunk_health}${MAGENTA}\$3.47${RESET} "
+    chunk_health="${chunk_health% }"
+
+    # Activity chunk
+    [ "$show_velocity" = "1" ] && chunk_activity="${chunk_activity}${GREEN}+156${RESET}${RED}-23${RESET} "
+    [ "$show_rate_5h" = "1" ] && chunk_activity="${chunk_activity}${DIM}5h:24%${RESET} "
+    [ "$show_rate_7d" = "1" ] && chunk_activity="${chunk_activity}${DIM}7d:41%${RESET} "
+    [ "$show_duration" = "1" ] && chunk_activity="${chunk_activity}${DIM}12m${RESET} "
+    [ "$show_cache" = "1" ] && chunk_activity="${chunk_activity}${CYAN}⚡96%${RESET} "
+    chunk_activity="${chunk_activity% }"
+
+    # Join non-empty chunks with separator
+    local preview=""
+    for chunk in "$chunk_identity" "$chunk_capability" "$chunk_health" "$chunk_activity"; do
+        if [ -n "$chunk" ]; then
+            if [ -n "$preview" ]; then
+                preview="${preview} ${SEP} ${chunk}"
+            else
+                preview="${chunk}"
+            fi
+        fi
+    done
 
     if [ -z "$preview" ]; then
         echo -e "  ${DIM}${I18N_ALL_HIDDEN}${RESET}"
