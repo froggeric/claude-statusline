@@ -103,10 +103,6 @@ set_i18n() {
             I18N_SECTION_HEALTH="[ 상태 ]"
             I18N_SECTION_ACTIVITY="[ 활동 ]"
             I18N_LAYOUT_LABEL="레이아웃"
-            I18N_ON="켜짐"
-            I18N_OFF="꺼짐"
-            I18N_CUSTOM="사용자"
-            I18N_DEFAULT="기본"
 
             L_CWD="작업 디렉토리  "
             L_PROJECT="프로젝트        "
@@ -138,10 +134,6 @@ set_i18n() {
             I18N_SECTION_HEALTH="[ 状态 ]"
             I18N_SECTION_ACTIVITY="[ 活动 ]"
             I18N_LAYOUT_LABEL="布局"
-            I18N_ON="开 "
-            I18N_OFF="关"
-            I18N_CUSTOM="自定义"
-            I18N_DEFAULT="默认"
 
             L_CWD="工作目录    "
             L_PROJECT="项目        "
@@ -173,10 +165,6 @@ set_i18n() {
             I18N_SECTION_HEALTH="[ 状態 ]"
             I18N_SECTION_ACTIVITY="[ アクティビティ ]"
             I18N_LAYOUT_LABEL="レイアウト"
-            I18N_ON="ON "
-            I18N_OFF="OFF"
-            I18N_CUSTOM="カスタム"
-            I18N_DEFAULT="デフォルト"
 
             L_CWD="作業ディレクトリ"
             L_PROJECT="プロジェクト    "
@@ -208,10 +196,6 @@ set_i18n() {
             I18N_SECTION_HEALTH="[ SALUD ]"
             I18N_SECTION_ACTIVITY="[ ACTIVIDAD ]"
             I18N_LAYOUT_LABEL="Diseño"
-            I18N_ON="SÍ "
-            I18N_OFF="NO"
-            I18N_CUSTOM="PERSONALIZADO"
-            I18N_DEFAULT="POR DEFECTO"
 
             L_CWD="Directorio  "
             L_PROJECT="Proyecto    "
@@ -243,10 +227,6 @@ set_i18n() {
             I18N_SECTION_HEALTH="[ HEALTH ]"
             I18N_SECTION_ACTIVITY="[ ACTIVITY ]"
             I18N_LAYOUT_LABEL="Layout"
-            I18N_ON="ON "
-            I18N_OFF="OFF"
-            I18N_CUSTOM="CUSTOM"
-            I18N_DEFAULT="DEFAULT"
 
             L_CWD="Directory   "
             L_PROJECT="Project     "
@@ -420,7 +400,10 @@ draw_menu() {
 
     clear
     echo -e "${BOLD}╔══════════════════════════════════════════════════════════════╗${RESET}"
-    printf "${BOLD}║  %-59s║${RESET}\n" "$I18N_TITLE"
+    # Compute visual width for CJK-safe padding (box inner width = 60 columns)
+    local title_visual=$(printf '%s' "$I18N_TITLE" | wc -L | tr -d ' ')
+    local title_pad=$((60 - title_visual))
+    printf "${BOLD}║  %s%*s║${RESET}\n" "$I18N_TITLE" "$title_pad" ""
     echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
     echo -e "${DIM}  ${I18N_HELP}${RESET}"
@@ -462,31 +445,18 @@ draw_menu() {
         val=$(resolve_var "$var_name")
 
         # Checkbox
-        local checkbox status status_color
+        local checkbox
         if [ "$val" = "1" ]; then
             checkbox="${GREEN}[✓]${RESET}"
-            status_color="${GREEN}"
-            status="${I18N_ON}"
         else
             checkbox="${RED}[ ]${RESET}"
-            status_color="${RED}"
-            status="${I18N_OFF}"
-        fi
-
-        # Check if custom (different from layout default)
-        local is_custom=""
-        local raw_val="${!var_name}"
-        if [ -n "$raw_val" ] && [ "$raw_val" != "$val" ]; then
-            is_custom=" ${DIM}(${I18N_CUSTOM})${RESET}"
-        elif [ -n "$raw_val" ]; then
-            is_custom=" ${DIM}(${I18N_CUSTOM})${RESET}"
         fi
 
         # Highlight current selection
         if [ "$i" -eq "$current" ]; then
-            echo -e "  ${REVERSE} ${checkbox} ${label}${RESET} ${DIM}${example}${RESET}  ${status_color}${status}${RESET}${is_custom}"
+            echo -e "  ${REVERSE} ${checkbox} ${label}${RESET} ${DIM}${example}${RESET}"
         else
-            echo -e "   ${checkbox} ${label} ${DIM}${example}${RESET}  ${status_color}${status}${RESET}${is_custom}"
+            echo -e "   ${checkbox} ${label} ${DIM}${example}${RESET}"
         fi
     done
 
