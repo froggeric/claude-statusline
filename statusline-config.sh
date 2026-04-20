@@ -1,197 +1,419 @@
 #!/bin/bash
-# Claude Code Statusline 설정 도구 v2
-# 키보드 방향키로 이동, 스페이스/엔터로 토글
-# 설정은 ~/.claude/statusline/statusline.env 에 저장됨
+# Claude Code Statusline Configuration Tool v8
+# Section-grouped display, layout mode cycling, 17 toggle items
+# Keyboard: arrows to move, space/enter to toggle, L to cycle layout, s to save, q to quit
 
 CONFIG_FILE="$HOME/.claude/statusline/statusline.env"
 
-# 현재 설정 로드 (기본값 1)
+# ============================================
+# Configuration loading
+# ============================================
 load_config() {
     if [ -f "$CONFIG_FILE" ]; then
         source "$CONFIG_FILE"
     fi
-    CLAUDE_SL_MODEL=${CLAUDE_SL_MODEL:-1}
-    CLAUDE_SL_BAR=${CLAUDE_SL_BAR:-1}
-    CLAUDE_SL_PERCENT=${CLAUDE_SL_PERCENT:-1}
-    CLAUDE_SL_TOKENS=${CLAUDE_SL_TOKENS:-1}
-    CLAUDE_SL_COST=${CLAUDE_SL_COST:-1}
-    CLAUDE_SL_CACHE=${CLAUDE_SL_CACHE:-1}
-    CLAUDE_SL_TIME=${CLAUDE_SL_TIME:-1}
+    CLAUDE_SL_LAYOUT=${CLAUDE_SL_LAYOUT:-compact}
+    CLAUDE_SL_CWD=${CLAUDE_SL_CWD:-}
+    CLAUDE_SL_PROJECT=${CLAUDE_SL_PROJECT:-}
+    CLAUDE_SL_BRANCH=${CLAUDE_SL_BRANCH:-}
+    CLAUDE_SL_SESSION=${CLAUDE_SL_SESSION:-}
+    CLAUDE_SL_WORKTREE=${CLAUDE_SL_WORKTREE:-}
+    CLAUDE_SL_MODEL=${CLAUDE_SL_MODEL:-}
+    CLAUDE_SL_AGENT=${CLAUDE_SL_AGENT:-}
+    CLAUDE_SL_BAR=${CLAUDE_SL_BAR:-}
+    CLAUDE_SL_PERCENT=${CLAUDE_SL_PERCENT:-}
+    CLAUDE_SL_TOKENS=${CLAUDE_SL_TOKENS:-}
+    CLAUDE_SL_COST=${CLAUDE_SL_COST:-}
+    CLAUDE_SL_VELOCITY=${CLAUDE_SL_VELOCITY:-}
+    CLAUDE_SL_RATE_5H=${CLAUDE_SL_RATE_5H:-}
+    CLAUDE_SL_RATE_7D=${CLAUDE_SL_RATE_7D:-}
+    CLAUDE_SL_DURATION=${CLAUDE_SL_DURATION:-}
+    CLAUDE_SL_CACHE=${CLAUDE_SL_CACHE:-}
     CLAUDE_SL_LANG=${CLAUDE_SL_LANG:-en}
 }
 
-# 다국어 텍스트 설정 (레이블은 12칸 정렬)
+# ============================================
+# Layout defaults
+# ============================================
+# Format: var_name:compact:detailed:multiline
+LAYOUT_DEFAULTS=(
+    "CLAUDE_SL_CWD:0:1:1"
+    "CLAUDE_SL_PROJECT:1:1:1"
+    "CLAUDE_SL_BRANCH:1:1:1"
+    "CLAUDE_SL_SESSION:0:1:1"
+    "CLAUDE_SL_WORKTREE:0:1:1"
+    "CLAUDE_SL_MODEL:1:1:1"
+    "CLAUDE_SL_AGENT:0:1:1"
+    "CLAUDE_SL_BAR:1:1:1"
+    "CLAUDE_SL_PERCENT:1:1:1"
+    "CLAUDE_SL_TOKENS:0:1:1"
+    "CLAUDE_SL_COST:1:1:1"
+    "CLAUDE_SL_VELOCITY:0:1:1"
+    "CLAUDE_SL_RATE_5H:0:1:1"
+    "CLAUDE_SL_RATE_7D:0:1:1"
+    "CLAUDE_SL_DURATION:0:1:1"
+    "CLAUDE_SL_CACHE:0:0:0"
+)
+
+# Resolve a var to its effective value for the current layout
+resolve_var() {
+    local var_name="$1"
+    local val="${!var_name}"
+    if [ -n "$val" ]; then
+        echo "$val"
+        return
+    fi
+    # Use layout default
+    local layout_idx=1
+    case "$CLAUDE_SL_LAYOUT" in
+        detailed)  layout_idx=2 ;;
+        multiline) layout_idx=3 ;;
+    esac
+    for entry in "${LAYOUT_DEFAULTS[@]}"; do
+        IFS=':' read -r vn c d m <<< "$entry"
+        if [ "$vn" = "$var_name" ]; then
+            local defaults=("$c" "$d" "$m")
+            echo "${defaults[$((layout_idx-1))]}"
+            return
+        fi
+    done
+    echo "1"
+}
+
+# ============================================
+# i18n
+# ============================================
 set_i18n() {
     if [ "$CLAUDE_SL_LANG" = "ko" ]; then
-        # 한국어 - 표시너비 12칸 정렬 (한글 1자=2칸)
-        I18N_TITLE="Claude Code Statusline 설정"
-        I18N_HELP="↑/↓: 이동  |  Space/Enter: 토글  |  s: 저장  |  q: 나가기"
+        I18N_TITLE="Claude Code Statusline 설정 v8"
+        I18N_HELP="↑↓ 이동 | Space 토글 | L 레이아웃 | s 저장 | q 나가기"
         I18N_PREVIEW="미리보기:"
         I18N_ALL_HIDDEN="(모든 항목이 숨겨짐)"
         I18N_SAVED="설정이 저장되었습니다."
         I18N_NOT_SAVED="변경 사항이 저장되지 않았습니다."
+        I18N_SECTION_IDENTITY="[ 아이덴티티 ]"
+        I18N_SECTION_CAPABILITY="[ 기능 ]"
+        I18N_SECTION_HEALTH="[ 상태 ]"
+        I18N_LAYOUT_LABEL="레이아웃"
+        I18N_LANG_LABEL="언어"
         I18N_LANG_VALUE="한국어"
-        # 항목 레이블 (표시너비 12칸 정렬)
-        L_MODEL="모델명      "    # 6 + 6공백 = 12
-        L_BAR="진행률 바   "      # 9 + 3공백 = 12
-        L_PERCENT="사용률 %    "  # 8 + 4공백 = 12
-        L_TOKENS="토큰 수     "   # 7 + 5공백 = 12
-        L_COST="비용        "     # 4 + 8공백 = 12
-        L_CACHE="캐시 효율   "    # 8 + 4공백 = 12
-        L_TIME="남은 시간   "     # 8 + 4공백 = 12
-        L_LANG="언어        "     # 4 + 8공백 = 12
+        I18N_ON="켜짐"
+        I18N_OFF="꺼짐"
+        I18N_CUSTOM="사용자"
+        I18N_DEFAULT="기본"
+
+        # Item labels (16-wide display alignment)
+        L_CWD="작업 디렉토리  "
+        L_PROJECT="프로젝트        "
+        L_BRANCH="Git 브랜치     "
+        L_SESSION="세션 이름      "
+        L_WORKTREE="워크트리       "
+        L_MODEL="모델명          "
+        L_AGENT="에이전트        "
+        L_BAR="진행률 바       "
+        L_PERCENT="사용률 %        "
+        L_TOKENS="토큰 수         "
+        L_COST="비용            "
+        L_VELOCITY="코드 속도      "
+        L_RATE_5H="5시간 제한     "
+        L_RATE_7D="7일 제한       "
+        L_DURATION="세션 시간      "
+        L_CACHE="캐시 효율       "
     else
-        # 영어 (기본)
-        I18N_TITLE="Claude Code Statusline Settings"
-        I18N_HELP="↑/↓: Move  |  Space/Enter: Toggle  |  s: Save  |  q: Quit"
+        I18N_TITLE="Claude Code Statusline Settings v8"
+        I18N_HELP="Arrows: Move | Space: Toggle | L: Layout | s: Save | q: Quit"
         I18N_PREVIEW="Preview:"
         I18N_ALL_HIDDEN="(All items hidden)"
         I18N_SAVED="Settings saved."
         I18N_NOT_SAVED="Changes not saved."
+        I18N_SECTION_IDENTITY="[ IDENTITY ]"
+        I18N_SECTION_CAPABILITY="[ CAPABILITY ]"
+        I18N_SECTION_HEALTH="[ HEALTH ]"
+        I18N_LAYOUT_LABEL="Layout"
+        I18N_LANG_LABEL="Language"
         I18N_LANG_VALUE="English"
-        # 항목 레이블 (12칸 정렬)
+        I18N_ON="ON "
+        I18N_OFF="OFF"
+        I18N_CUSTOM="CUSTOM"
+        I18N_DEFAULT="DEFAULT"
+
+        L_CWD="Directory   "
+        L_PROJECT="Project     "
+        L_BRANCH="Git Branch  "
+        L_SESSION="Session     "
+        L_WORKTREE="Worktree    "
         L_MODEL="Model       "
+        L_AGENT="Agent       "
         L_BAR="Progress Bar"
         L_PERCENT="Usage %     "
         L_TOKENS="Tokens      "
         L_COST="Cost        "
+        L_VELOCITY="Velocity    "
+        L_RATE_5H="5h Rate     "
+        L_RATE_7D="7d Rate     "
+        L_DURATION="Duration    "
         L_CACHE="Cache       "
-        L_TIME="Time Left   "
-        L_LANG="Language    "
     fi
 }
 
-# 설정 저장
-save_config() {
-    cat > "$CONFIG_FILE" << EOF
-# Claude Code Statusline 설정
-# 1=표시, 0=숨김
-export CLAUDE_SL_MODEL=$CLAUDE_SL_MODEL
-export CLAUDE_SL_BAR=$CLAUDE_SL_BAR
-export CLAUDE_SL_PERCENT=$CLAUDE_SL_PERCENT
-export CLAUDE_SL_TOKENS=$CLAUDE_SL_TOKENS
-export CLAUDE_SL_COST=$CLAUDE_SL_COST
-export CLAUDE_SL_CACHE=$CLAUDE_SL_CACHE
-export CLAUDE_SL_TIME=$CLAUDE_SL_TIME
-# 언어 설정 (ko/en)
-export CLAUDE_SL_LANG=$CLAUDE_SL_LANG
-EOF
-    echo ""
-    echo "$I18N_SAVED"
-}
-
-# 색상
+# ============================================
+# Colors
+# ============================================
 RED='\033[31m'
 GREEN='\033[32m'
 CYAN='\033[36m'
+YELLOW='\033[33m'
+MAGENTA='\033[35m'
 BOLD='\033[1m'
 DIM='\033[2m'
 RESET='\033[0m'
 REVERSE='\033[7m'
 
-# 현재 선택 인덱스
-current=0
-total=8
+# ============================================
+# Item definitions (ordered by section)
+# ============================================
+# Format: var_name:label_var:example_text
+ITEMS=(
+    # Identity
+    "CLAUDE_SL_CWD:L_CWD:~/github/app    "
+    "CLAUDE_SL_PROJECT:L_PROJECT:my-app         "
+    "CLAUDE_SL_BRANCH:L_BRANCH:main            "
+    "CLAUDE_SL_SESSION:L_SESSION:feature-auth   "
+    "CLAUDE_SL_WORKTREE:L_WORKTREE:wt:feat-x      "
+    # Capability
+    "CLAUDE_SL_MODEL:L_MODEL:[Opus 4.5]      "
+    "CLAUDE_SL_AGENT:L_AGENT:reviewer          "
+    # Health
+    "CLAUDE_SL_BAR:L_BAR:[████░░░░░░░░░]"
+    "CLAUDE_SL_PERCENT:L_PERCENT:62%             "
+    "CLAUDE_SL_TOKENS:L_TOKENS:(124K/200K)     "
+    "CLAUDE_SL_COST:L_COST:\$3.47            "
+    "CLAUDE_SL_VELOCITY:L_VELOCITY:+156/-23        "
+    "CLAUDE_SL_RATE_5H:L_RATE_5H:5h:24%           "
+    "CLAUDE_SL_RATE_7D:L_RATE_7D:7d:41%           "
+    "CLAUDE_SL_DURATION:L_DURATION:12m             "
+    "CLAUDE_SL_CACHE:L_CACHE:⚡96%           "
+)
 
-# 값 토글
+# Section break indices (insert section header before these item indices)
+SECTION_HEADERS="0:5:7"
+SECTION_LABELS_VAR="I18N_SECTION_IDENTITY:I18N_SECTION_CAPABILITY:I18N_SECTION_HEALTH"
+
+# ============================================
+# Navigation state
+# ============================================
+current=0
+total=${#ITEMS[@]}
+
+# ============================================
+# Toggle value
+# ============================================
 toggle_value() {
-    local var_name=$1
-    local current_value=${!var_name}
-    # 언어 설정은 ko/en 토글
-    if [ "$var_name" = "CLAUDE_SL_LANG" ]; then
-        if [ "$current_value" = "ko" ]; then
-            eval "$var_name=en"
-        else
-            eval "$var_name=ko"
-        fi
-    # 나머지는 0/1 토글
-    elif [ "$current_value" = "1" ]; then
+    local var_name="$1"
+    local current_val
+    current_val=$(resolve_var "$var_name")
+    if [ "$current_val" = "1" ]; then
         eval "$var_name=0"
     else
         eval "$var_name=1"
     fi
 }
 
-# 화면 그리기
+# ============================================
+# Layout cycling
+# ============================================
+cycle_layout() {
+    case "$CLAUDE_SL_LAYOUT" in
+        compact)   CLAUDE_SL_LAYOUT=detailed ;;
+        detailed)  CLAUDE_SL_LAYOUT=multiline ;;
+        multiline) CLAUDE_SL_LAYOUT=compact ;;
+    esac
+}
+
+# ============================================
+# Language cycling
+# ============================================
+cycle_lang() {
+    if [ "$CLAUDE_SL_LANG" = "ko" ]; then
+        CLAUDE_SL_LANG=en
+    else
+        CLAUDE_SL_LANG=ko
+    fi
+    set_i18n
+}
+
+# ============================================
+# Save configuration
+# ============================================
+save_config() {
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    cat > "$CONFIG_FILE" << EOF
+# Claude Code Statusline v8 Configuration
+# Layout mode: compact / detailed / multiline
+# Toggle items are only written here when changed from layout defaults.
+export CLAUDE_SL_LAYOUT=$CLAUDE_SL_LAYOUT
+
+# Customized items (values differ from layout defaults)
+EOF
+    # Only write items that have been explicitly set (non-empty)
+    for entry in "${LAYOUT_DEFAULTS[@]}"; do
+        IFS=':' read -r var_name c d m <<< "$entry"
+        local val="${!var_name}"
+        if [ -n "$val" ]; then
+            echo "export ${var_name}=${val}" >> "$CONFIG_FILE"
+        fi
+    done
+    echo "" >> "$CONFIG_FILE"
+    echo "# Language (ko/en)" >> "$CONFIG_FILE"
+    echo "export CLAUDE_SL_LANG=$CLAUDE_SL_LANG" >> "$CONFIG_FILE"
+
+    echo ""
+    echo -e "${GREEN}${I18N_SAVED}${RESET}"
+}
+
+# ============================================
+# Draw menu
+# ============================================
 draw_menu() {
-    # 언어 텍스트 업데이트 (토글 시 즉시 반영)
     set_i18n
 
-    # 항목 정의 (언어에 따라 동적 설정, 예시는 12칸 정렬)
-    local ITEMS=(
-        "CLAUDE_SL_MODEL:$L_MODEL:[Opus 4.5]  "
-        "CLAUDE_SL_BAR:$L_BAR:[████░░░░░░]"
-        "CLAUDE_SL_PERCENT:$L_PERCENT:45%         "
-        "CLAUDE_SL_TOKENS:$L_TOKENS:(81K/200K)  "
-        "CLAUDE_SL_COST:$L_COST:\$1.25       "
-        "CLAUDE_SL_CACHE:$L_CACHE:⚡96%       "
-        "CLAUDE_SL_TIME:$L_TIME:~7m         "
-        "CLAUDE_SL_LANG:$L_LANG:ko/en       "
-    )
+    # Layout indicator
+    local layout_display
+    case "$CLAUDE_SL_LAYOUT" in
+        compact)   layout_display="${GREEN}compact${RESET}" ;;
+        detailed)  layout_display="${YELLOW}detailed${RESET}" ;;
+        multiline) layout_display="${CYAN}multiline${RESET}" ;;
+    esac
 
     clear
-    echo -e "${BOLD}╔══════════════════════════════════════════════════════╗${RESET}"
-    printf "${BOLD}║     %-49s║${RESET}\n" "$I18N_TITLE"
-    echo -e "${BOLD}╚══════════════════════════════════════════════════════╝${RESET}"
+    echo -e "${BOLD}╔══════════════════════════════════════════════════════════════╗${RESET}"
+    printf "${BOLD}║  %-59s║${RESET}\n" "$I18N_TITLE"
+    echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
     echo -e "${DIM}  ${I18N_HELP}${RESET}"
+    echo -e "  ${I18N_LAYOUT_LABEL}: ${layout_display}    ${I18N_LANG_LABEL}: ${CYAN}${I18N_LANG_VALUE}${RESET}"
     echo ""
 
-    for i in "${!ITEMS[@]}"; do
-        IFS=':' read -r var_name label example <<< "${ITEMS[$i]}"
-        local value=${!var_name}
+    # Parse section headers
+    local -a sec_indices sec_labels
+    IFS=':' read -ra sec_indices <<< "$SECTION_HEADERS"
+    IFS=':' read -ra sec_label_vars <<< "$SECTION_LABELS_VAR"
 
-        # 언어 설정은 별도 표시
-        if [ "$var_name" = "CLAUDE_SL_LANG" ]; then
-            checkbox="${CYAN}[⚙]${RESET}"
-            status="${GREEN}${I18N_LANG_VALUE}${RESET}"
-        # 체크박스 표시
-        elif [ "$value" = "1" ]; then
-            checkbox="${GREEN}[✓]${RESET}"
-            status="${GREEN}ON ${RESET}"
-        else
-            checkbox="${RED}[ ]${RESET}"
-            status="${RED}OFF${RESET}"
+    local sec_idx=0
+    local item_idx=0
+
+    for i in "${!ITEMS[@]}"; do
+        # Check if we need a section header
+        if [ "$sec_idx" -lt "${#sec_indices[@]}" ] && [ "$i" -eq "${sec_indices[$sec_idx]}" ]; then
+            local sec_label_var="${sec_label_vars[$sec_idx]}"
+            local sec_label="${!sec_label_var}"
+            echo -e "  ${DIM}${sec_label}${RESET}"
+            ((sec_idx++))
         fi
 
-        # 현재 선택된 항목 하이라이트
-        if [ "$i" -eq "$current" ]; then
-            echo -e "  ${REVERSE} ${checkbox} ${label}${RESET} ${DIM}${example}${RESET}  ${status}"
+        IFS=':' read -r var_name label_var example <<< "${ITEMS[$i]}"
+        local label="${!label_var}"
+        local val
+        val=$(resolve_var "$var_name")
+
+        # Checkbox
+        local checkbox status status_color
+        if [ "$val" = "1" ]; then
+            checkbox="${GREEN}[✓]${RESET}"
+            status_color="${GREEN}"
+            status="${I18N_ON}"
         else
-            echo -e "   ${checkbox} ${label} ${DIM}${example}${RESET}  ${status}"
+            checkbox="${RED}[ ]${RESET}"
+            status_color="${RED}"
+            status="${I18N_OFF}"
+        fi
+
+        # Check if custom (different from layout default)
+        local is_custom=""
+        local raw_val="${!var_name}"
+        if [ -n "$raw_val" ] && [ "$raw_val" != "$val" ]; then
+            is_custom=" ${DIM}(${I18N_CUSTOM})${RESET}"
+        elif [ -n "$raw_val" ]; then
+            is_custom=" ${DIM}(${I18N_CUSTOM})${RESET}"
+        fi
+
+        # Highlight current selection
+        if [ "$i" -eq "$current" ]; then
+            echo -e "  ${REVERSE} ${checkbox} ${label}${RESET} ${DIM}${example}${RESET}  ${status_color}${status}${RESET}${is_custom}"
+        else
+            echo -e "   ${checkbox} ${label} ${DIM}${example}${RESET}  ${status_color}${status}${RESET}${is_custom}"
         fi
     done
 
     echo ""
-    echo -e "${DIM}──────────────────────────────────────────────────────────${RESET}"
+    echo -e "${DIM}──────────────────────────────────────────────────────────────────${RESET}"
     echo ""
 
-    # 미리보기
+    # Preview
     echo -e "${CYAN}${I18N_PREVIEW}${RESET}"
-    preview=""
+    local preview=""
 
-    [ "$CLAUDE_SL_MODEL" = "1" ] && preview="${preview}${CYAN}[Opus 4.5]${RESET} "
-    [ "$CLAUDE_SL_BAR" = "1" ] && preview="${preview}${GREEN}[████░░░░░░]${RESET} "
-    [ "$CLAUDE_SL_PERCENT" = "1" ] && preview="${preview}${GREEN}40%${RESET} "
-    [ "$CLAUDE_SL_TOKENS" = "1" ] && preview="${preview}${DIM}(81K/200K)${RESET} "
-    [ "$CLAUDE_SL_COST" = "1" ] && preview="${preview}\033[35m\$1.25${RESET} "
-    [ "$CLAUDE_SL_CACHE" = "1" ] && preview="${preview}${CYAN}⚡96%${RESET} "
-    [ "$CLAUDE_SL_TIME" = "1" ] && preview="${preview}${DIM}~7m${RESET}"
+    local show_cwd=$(resolve_var CLAUDE_SL_CWD)
+    local show_project=$(resolve_var CLAUDE_SL_PROJECT)
+    local show_branch=$(resolve_var CLAUDE_SL_BRANCH)
+    local show_session=$(resolve_var CLAUDE_SL_SESSION)
+    local show_worktree=$(resolve_var CLAUDE_SL_WORKTREE)
+    local show_model=$(resolve_var CLAUDE_SL_MODEL)
+    local show_agent=$(resolve_var CLAUDE_SL_AGENT)
+    local show_bar=$(resolve_var CLAUDE_SL_BAR)
+    local show_percent=$(resolve_var CLAUDE_SL_PERCENT)
+    local show_tokens=$(resolve_var CLAUDE_SL_TOKENS)
+    local show_cost=$(resolve_var CLAUDE_SL_COST)
+    local show_velocity=$(resolve_var CLAUDE_SL_VELOCITY)
+    local show_rate_5h=$(resolve_var CLAUDE_SL_RATE_5H)
+    local show_rate_7d=$(resolve_var CLAUDE_SL_RATE_7D)
+    local show_duration=$(resolve_var CLAUDE_SL_DURATION)
+    local show_cache=$(resolve_var CLAUDE_SL_CACHE)
+
+    [ "$show_project" = "1" ] && preview="${preview}${BOLD}my-app${RESET} "
+    [ "$show_cwd" = "1" ] && preview="${preview}${DIM}~/github/app${RESET} "
+    [ "$show_branch" = "1" ] && preview="${preview}main "
+    [ "$show_session" = "1" ] && preview="${preview}${CYAN}feature-auth${RESET} "
+    [ "$show_worktree" = "1" ] && preview="${preview}${YELLOW}wt:feat-x${RESET} "
+    [ "$show_model" = "1" ] && preview="${preview}${CYAN}[Opus 4.5${RESET}"
+    [ "$show_agent" = "1" ] && preview="${preview}${MAGENTA}/reviewer${RESET}"
+    [ "$show_model" = "1" ] && preview="${preview}${CYAN}]${RESET} "
+    [ "$show_bar" = "1" ] && preview="${preview}${GREEN}[████░░░░░░░░░]${RESET} "
+    [ "$show_percent" = "1" ] && preview="${preview}${GREEN}62%${RESET} "
+    [ "$show_tokens" = "1" ] && preview="${preview}${DIM}(124K/200K)${RESET} "
+    [ "$show_cost" = "1" ] && preview="${preview}${MAGENTA}\$3.47${RESET} "
+    [ "$show_velocity" = "1" ] && preview="${preview}${GREEN}+156${RESET}${RED}-23${RESET} "
+    [ "$show_rate_5h" = "1" ] && preview="${preview}${DIM}5h:24%${RESET} "
+    [ "$show_rate_7d" = "1" ] && preview="${preview}${DIM}7d:41%${RESET} "
+    [ "$show_duration" = "1" ] && preview="${preview}${DIM}12m${RESET} "
+    [ "$show_cache" = "1" ] && preview="${preview}${CYAN}⚡96%${RESET}"
 
     if [ -z "$preview" ]; then
         echo -e "  ${DIM}${I18N_ALL_HIDDEN}${RESET}"
     else
         echo -e "  $preview"
     fi
+
+    # Multiline second line preview
+    if [ "$CLAUDE_SL_LAYOUT" = "multiline" ]; then
+        local line2=""
+        [ "$show_velocity" = "1" ] && line2="${line2}${GREEN}+156${RESET}${RED}-23${RESET}"
+        [ "$show_rate_5h" = "1" ] && line2="${line2:+${line2} · }${DIM}5h:24%${RESET}"
+        [ "$show_rate_7d" = "1" ] && line2="${line2:+${line2} }${DIM}7d:41%${RESET}"
+        [ "$show_duration" = "1" ] && line2="${line2:+${line2} · }${DIM}12m${RESET}"
+        [ "$show_cache" = "1" ] && line2="${line2:+${line2} · }${CYAN}⚡96%${RESET}"
+        [ -n "$line2" ] && echo -e "  $line2"
+    fi
 }
 
-# 키 입력 처리
+# ============================================
+# Key input
+# ============================================
 read_key() {
     local key
     IFS= read -rsn1 key
 
     if [[ $key == $'\x1b' ]]; then
-        # 방향키: ESC + [ + A/B
         read -rsn2 key
         case "$key" in
             '[A') echo "UP" ;;
@@ -200,6 +422,8 @@ read_key() {
         esac
     elif [[ $key == '' || $key == ' ' ]]; then
         echo "TOGGLE"
+    elif [[ $key == 'l' || $key == 'L' || $key == 'ㅣ' ]]; then
+        echo "LAYOUT"
     elif [[ $key == 's' || $key == 'S' || $key == 'ㄴ' ]]; then
         echo "SAVE"
     elif [[ $key == 'q' || $key == 'Q' || $key == 'ㅂ' ]]; then
@@ -209,26 +433,22 @@ read_key() {
     fi
 }
 
-# 메인 루프
+# ============================================
+# Main loop
+# ============================================
 main() {
     load_config
     set_i18n
 
-    # 터미널 설정 저장 및 raw 모드
+    # Get item var names for toggling
+    ITEM_VARS=()
+    for item in "${ITEMS[@]}"; do
+        IFS=':' read -r var_name rest <<< "$item"
+        ITEM_VARS+=("$var_name")
+    done
+
     stty -echo
     trap 'stty echo; exit' INT TERM
-
-    # 항목 정의 (토글용)
-    ITEM_VARS=(
-        "CLAUDE_SL_MODEL"
-        "CLAUDE_SL_BAR"
-        "CLAUDE_SL_PERCENT"
-        "CLAUDE_SL_TOKENS"
-        "CLAUDE_SL_COST"
-        "CLAUDE_SL_CACHE"
-        "CLAUDE_SL_TIME"
-        "CLAUDE_SL_LANG"
-    )
 
     while true; do
         draw_menu
@@ -246,6 +466,9 @@ main() {
                 ;;
             TOGGLE)
                 toggle_value "${ITEM_VARS[$current]}"
+                ;;
+            LAYOUT)
+                cycle_layout
                 ;;
             SAVE)
                 stty echo

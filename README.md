@@ -1,162 +1,205 @@
-# Claude Code Statusline v6
+# Claude Code Statusline v8
 
-Claude Code CLI 하단에 표시되는 커스텀 상태줄입니다.
+Custom statusline for the Claude Code CLI, applying human perception principles (preattentive color, visual hierarchy, chunking) to surface the most actionable information at a glance.
 
-## 미리보기
+## Preview
+
+### Compact (default)
 
 ```
-[Opus 4.5] [████░░░░░░] 40% (81K/200K) $1.25 ⚡96% ~7m
+my-app main [Opus 4.5] ██████████░░░░░ 62% $3.47
 ```
 
-| 항목 | 설명 |
-|------|------|
-| `[Opus 4.5]` | 현재 모델명 |
-| `[████░░░░░░]` | 컨텍스트 사용률 바 (10칸) |
-| `40%` | 컨텍스트 사용률 퍼센트 |
-| `(81K/200K)` | 사용 토큰 / 전체 컨텍스트 |
-| `$1.25` | 누적 비용 |
-| `⚡96%` | 캐시 히트율 |
-| `~7m` | 예상 남은 시간 |
+### Detailed
 
-## 설치
+```
+my-app main feature-auth wt:feat-x [Opus 4.5/reviewer] ██████████░░░░░ 62% (124K/200K) $3.47 +156/-23 5h:24% 7d:41% 12m
+```
 
-### 빠른 설치
+### Multi-line
+
+```
+my-app main feature-auth [Opus 4.5] ██████████░░░░░ 62% (124K/200K) $3.47
++156/-23 · 5h:24% 7d:41% · 12m
+```
+
+### Special states
+
+| State | Example |
+|-------|---------|
+| Context compressed (>100%) | `my-app main [Opus 4.5] ████████████████ COMPRESSED (180K/200K) $5.20` |
+| Agent mode | `my-app main [Opus 4.5/reviewer] ██████░░░░░░░░ 45% $1.25` |
+| Worktree | `my-app main wt:feature-x [Opus 4.5] ██████░░░░░░░░ 45% $1.25` |
+
+## Item Inventory (16 configurable items)
+
+### Identity
+
+| # | Env Var | Default (C/D/M) | Auto-hide |
+|---|---------|---------|-----------|
+| 1 | `CLAUDE_SL_CWD` | 0/1/1 | if empty |
+| 2 | `CLAUDE_SL_PROJECT` | 1/1/1 | if empty |
+| 3 | `CLAUDE_SL_BRANCH` | 1/1/1 | if not git repo |
+| 4 | `CLAUDE_SL_SESSION` | 0/1/1 | if no session name |
+| 5 | `CLAUDE_SL_WORKTREE` | 0/1/1 | if not in worktree |
+
+### Capability
+
+| # | Env Var | Default (C/D/M) | Auto-hide |
+|---|---------|---------|-----------|
+| 6 | `CLAUDE_SL_MODEL` | 1/1/1 | never |
+| 7 | `CLAUDE_SL_AGENT` | 0/1/1 | if no agent |
+
+### Health
+
+| # | Env Var | Default (C/D/M) | Auto-hide |
+|---|---------|---------|-----------|
+| 8 | `CLAUDE_SL_BAR` | 1/1/1 | never |
+| 9 | `CLAUDE_SL_PERCENT` | 1/1/1 | never |
+| 10 | `CLAUDE_SL_TOKENS` | 0/1/1 | never |
+| 11 | `CLAUDE_SL_COST` | 1/1/1 | if zero |
+| 12 | `CLAUDE_SL_VELOCITY` | 0/1/1 | if both zero |
+| 13 | `CLAUDE_SL_RATE_5H` | 0/1/1 | if absent (Pro/Max only) |
+| 14 | `CLAUDE_SL_RATE_7D` | 0/1/1 | if absent (Pro/Max only) |
+| 15 | `CLAUDE_SL_DURATION` | 0/1/1 | never |
+| 16 | `CLAUDE_SL_CACHE` | 0/0/0 | if empty |
+
+Defaults: **C**ompact / **D**etailed / **M**ultiline
+
+## Color System
+
+### Context usage (5-band gradient)
+
+| Range | Color | Meaning |
+|-------|-------|---------|
+| 0-30% | Green | Healthy |
+| 31-60% | Bright Green | Normal |
+| 61-80% | Yellow | Getting warm |
+| 81-95% | Bright Red | Danger |
+| 96-100% | Blinking Red | Critical |
+| >100% | Bold Red + "COMPRESSED" | Context compressed |
+
+### Item colors
+
+| Item | Color | Rationale |
+|------|-------|-----------|
+| Project name | Bold | Primary identity |
+| CWD | Dim | Low priority |
+| Model | Cyan | Identity, neutral |
+| Agent | Magenta (in model) | Distinguish from model |
+| Cost | Magenta | Money = attention |
+| Velocity +lines | Green | Convention |
+| Velocity -lines | Red | Convention |
+| Duration | Dim | Low priority |
+| Rate limits | Color-coded by % | Same gradient logic |
+
+## Installation
+
+### Quick install
 
 ```bash
-# 파일 다운로드
-curl -fsSL https://gist.githubusercontent.com/inchan/b7e63d8c1cb29c83960944d833422d04/raw/statusline.sh -o ~/.claude/statusline/statusline.sh
-curl -fsSL https://gist.githubusercontent.com/inchan/b7e63d8c1cb29c83960944d833422d04/raw/statusline-config.sh -o ~/.claude/statusline/statusline-config.sh
+# Clone or download
+git clone https://github.com/user/claude-statusline ~/.claude/statusline
 
-# 실행 권한 부여
+# Make executable
 chmod +x ~/.claude/statusline/statusline.sh ~/.claude/statusline/statusline-config.sh
 ```
 
-### Claude Code 설정
+### Claude Code settings
 
-`~/.claude/settings.json`에 추가:
+Add to `~/.claude/settings.json`:
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "~/.claude/statusline/statusline.sh"
+    "command": "~/.claude/statusline/statusline.sh",
+    "refreshInterval": 1000
   }
 }
 ```
 
-또는 Claude Code 내에서 `/statusline` 명령어로 설정.
+Or use `/statusline` inside Claude Code.
 
-## 파일 구조
+## File structure
 
 ```
 ~/.claude/statusline/
-├── statusline.sh          # 메인 상태줄 스크립트
-├── statusline-config.sh   # 인터랙티브 설정 도구
-└── statusline.env         # 설정 파일 (자동 생성)
+├── statusline.sh          # Main statusline script
+├── statusline-config.sh   # Interactive TUI config tool
+└── statusline.env         # Config file (auto-generated)
 ```
 
-## 설정 방법
+## Configuration
 
-### 1. 인터랙티브 설정 (권장)
+### Interactive (recommended)
 
 ```bash
 ~/.claude/statusline/statusline-config.sh
 ```
 
-| 키 | 동작 |
-|----|------|
-| `↑` / `↓` | 항목 이동 |
-| `Space` / `Enter` | 켜기/끄기 토글 |
-| `s` | 저장 |
-| `q` | 나가기 (저장 안 함) |
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Move between items |
+| `Space` / `Enter` | Toggle on/off |
+| `L` | Cycle layout (compact → detailed → multiline) |
+| `s` | Save |
+| `q` | Quit (no save) |
 
-### 2. 환경변수 직접 설정
+Supports English and Korean (toggle with language option). Korean keyboard layout: `ㄴ` = save, `ㅂ` = quit, `ㅣ` = layout cycle.
 
-`~/.claude/statusline/statusline.env` 파일을 직접 편집:
+### Manual
 
-```bash
-# 1=표시, 0=숨김
-export CLAUDE_SL_MODEL=1      # 모델명
-export CLAUDE_SL_BAR=1        # 진행률 바
-export CLAUDE_SL_PERCENT=1    # 사용률 %
-export CLAUDE_SL_TOKENS=1     # 토큰 수
-export CLAUDE_SL_COST=1       # 비용
-export CLAUDE_SL_CACHE=1      # 캐시 효율
-export CLAUDE_SL_TIME=1       # 남은 시간
-```
-
-### 3. 임시 설정 (세션 단위)
+Edit `~/.claude/statusline/statusline.env`:
 
 ```bash
-CLAUDE_SL_MODEL=0 CLAUDE_SL_TIME=0 claude
-```
+# Layout mode: compact / detailed / multiline
+export CLAUDE_SL_LAYOUT=compact
 
-## 설정 예시
-
-### 미니멀 (퍼센트 + 토큰만)
-
-```bash
-export CLAUDE_SL_MODEL=0
-export CLAUDE_SL_BAR=0
+# Only write overrides — items not listed here use layout defaults
+export CLAUDE_SL_TOKENS=1
 export CLAUDE_SL_COST=0
-export CLAUDE_SL_CACHE=0
-export CLAUDE_SL_TIME=0
+
+# Language (ko/en)
+export CLAUDE_SL_LANG=en
 ```
 
-결과: `40% (81K/200K)`
-
-### 비용 중심
+### Per-session override
 
 ```bash
-export CLAUDE_SL_BAR=0
-export CLAUDE_SL_PERCENT=0
-export CLAUDE_SL_CACHE=0
-export CLAUDE_SL_TIME=0
+CLAUDE_SL_LAYOUT=detailed CLAUDE_SL_RATE_5H=1 claude
 ```
 
-결과: `[Opus 4.5] (81K/200K) $1.25`
+## Migration from v7
 
-## 기타 옵션
+Old config files work seamlessly — existing toggle values are preserved. New v8 items (branch, session, worktree, agent, velocity, rate limits, duration) adopt layout-mode defaults automatically. The unreliable "time remaining estimate" has been removed.
 
-| 환경변수 | 설명 |
-|----------|------|
-| `NO_COLOR=1` | 색상 비활성화 |
-| `CLAUDE_STATUSLINE_DEBUG=1` | 디버그 모드 (`/tmp/claude_statusline_debug.json` 생성) |
+## Other options
 
-## 색상 규칙
+| Variable | Description |
+|----------|-------------|
+| `NO_COLOR=1` | Disable all colors |
+| `CLAUDE_STATUSLINE_DEBUG=1` | Debug mode (saves JSON to `/tmp/claude_statusline_debug.json`) |
 
-| 사용률 | 색상 |
-|--------|------|
-| 0-50% | 🟢 초록 |
-| 51-80% | 🟡 노랑 |
-| 81-100% | 🔴 빨강 |
-| 100%+ | 🔴 빨강 볼드 + "압축됨" |
+## Dependencies
 
-## 의존성
+- `jq` — JSON parsing
+- `awk` — Cost formatting
+- `git` — Branch detection (optional)
 
-- `jq` - JSON 파싱
-- `awk` - 숫자 포맷팅
+Standard on macOS and most Linux distributions.
 
-macOS/Linux 대부분의 환경에서 기본 설치되어 있습니다.
+## Version history
 
-## 토큰 계산 방식
+| Version | Changes |
+|---------|---------|
+| v3 | Cost, cache, burn rate |
+| v4 | Token calculation fix (current_usage) |
+| v5 | M suffix, NO_COLOR standard |
+| v6 | Per-item toggles, interactive config tool |
+| v7 | Project name, working directory |
+| v8 | Layout modes, git branch, rate limits, code velocity, session duration, agent/worktree support, 5-band color gradient, auto-hiding, Korean i18n |
 
-```
-컨텍스트 사용량 = input_tokens + cache_read_input_tokens + cache_creation_input_tokens
-```
-
-- `current_usage` 기준 (실제 컨텍스트 점유율)
-- `total_*` 값은 누적 비용 계산용 (별도)
-
-## 버전 히스토리
-
-| 버전 | 변경 사항 |
-|------|----------|
-| v3 | 비용, 캐시, 소진률 추가 |
-| v4 | 토큰 계산 버그 수정 (current_usage 기준) |
-| v5 | M 단위 지원, NO_COLOR 표준 |
-| v6 | 개별 항목 on/off 토글, 인터랙티브 설정 도구 |
-
-## 라이선스
+## License
 
 MIT
