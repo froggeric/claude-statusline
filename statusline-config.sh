@@ -93,6 +93,7 @@ set_i18n() {
     case "$CLAUDE_SL_LANG" in
         ko)
             I18N_TITLE="Claude Code Statusline 설정 v7"
+            I18N_TITLE_PAD="                              "
             I18N_HELP="↑↓ 이동 | Space 토글 | L 레이아웃 | ←→ 언어 | s 저장 | q 나가기"
             I18N_PREVIEW="미리보기:"
             I18N_ALL_HIDDEN="(모든 항목이 숨겨짐)"
@@ -124,6 +125,7 @@ set_i18n() {
             ;;
         zh)
             I18N_TITLE="Claude Code Statusline 设置 v7"
+            I18N_TITLE_PAD="                              "
             I18N_HELP="↑↓ 移动 | Space 切换 | L 布局 | ←→ 语言 | s 保存 | q 退出"
             I18N_PREVIEW="预览："
             I18N_ALL_HIDDEN="(所有项目已隐藏)"
@@ -155,6 +157,7 @@ set_i18n() {
             ;;
         ja)
             I18N_TITLE="Claude Code Statusline 設定 v7"
+            I18N_TITLE_PAD="                              "
             I18N_HELP="↑↓ 移動 | Space 切替 | L レイアウト | ←→ 言語 | s 保存 | q 終了"
             I18N_PREVIEW="プレビュー："
             I18N_ALL_HIDDEN="(全項目非表示)"
@@ -186,6 +189,7 @@ set_i18n() {
             ;;
         es)
             I18N_TITLE="Claude Code Statusline Configuración v7"
+            I18N_TITLE_PAD="                     "
             I18N_HELP="↑↓ Mover | Space Alternar | L Diseño | ←→ Idioma | s Guardar | q Salir"
             I18N_PREVIEW="Vista previa:"
             I18N_ALL_HIDDEN="(Todos los elementos ocultos)"
@@ -217,6 +221,7 @@ set_i18n() {
             ;;
         *)
             I18N_TITLE="Claude Code Statusline Settings v7"
+            I18N_TITLE_PAD="                          "
             I18N_HELP="↑↓ Move | Space Toggle | L Layout | ←→ Language | s Save | q Quit"
             I18N_PREVIEW="Preview:"
             I18N_ALL_HIDDEN="(All items hidden)"
@@ -400,10 +405,7 @@ draw_menu() {
 
     clear
     echo -e "${BOLD}╔══════════════════════════════════════════════════════════════╗${RESET}"
-    # Compute visual width for CJK-safe padding (box inner width = 60 columns)
-    local title_visual=$(printf '%s' "$I18N_TITLE" | wc -L | tr -d ' ')
-    local title_pad=$((60 - title_visual))
-    printf "${BOLD}║  %s%*s║${RESET}\n" "$I18N_TITLE" "$title_pad" ""
+    echo -e "${BOLD}║  ${I18N_TITLE}${I18N_TITLE_PAD}║${RESET}"
     echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
     echo -e "${DIM}  ${I18N_HELP}${RESET}"
