@@ -57,6 +57,10 @@ LAYOUT_DEFAULTS=(
     "CLAUDE_SL_CACHE:0:0:0"
 )
 
+# Supported languages: code, display name (in native script)
+LANGS=(en ko zh ja es)
+LANG_DISPLAY=("English" "한국어" "中文" "日本語" "Español")
+
 # Resolve a var to its effective value for the current layout
 resolve_var() {
     local var_name="$1"
@@ -86,80 +90,183 @@ resolve_var() {
 # i18n
 # ============================================
 set_i18n() {
-    if [ "$CLAUDE_SL_LANG" = "ko" ]; then
-        I18N_TITLE="Claude Code Statusline 설정 v7"
-        I18N_HELP="↑↓ 이동 | Space 토글 | L 레이아웃 | s 저장 | q 나가기"
-        I18N_PREVIEW="미리보기:"
-        I18N_ALL_HIDDEN="(모든 항목이 숨겨짐)"
-        I18N_SAVED="설정이 저장되었습니다."
-        I18N_NOT_SAVED="변경 사항이 저장되지 않았습니다."
-        I18N_SECTION_IDENTITY="[ 아이덴티티 ]"
-        I18N_SECTION_CAPABILITY="[ 기능 ]"
-        I18N_SECTION_HEALTH="[ 상태 ]"
-        I18N_SECTION_ACTIVITY="[ 활동 ]"
-        I18N_LAYOUT_LABEL="레이아웃"
-        I18N_LANG_LABEL="언어"
-        I18N_LANG_VALUE="한국어"
-        I18N_ON="켜짐"
-        I18N_OFF="꺼짐"
-        I18N_CUSTOM="사용자"
-        I18N_DEFAULT="기본"
+    case "$CLAUDE_SL_LANG" in
+        ko)
+            I18N_TITLE="Claude Code Statusline 설정 v7"
+            I18N_HELP="↑↓ 이동 | Space 토글 | L 레이아웃 | ←→ 언어 | s 저장 | q 나가기"
+            I18N_PREVIEW="미리보기:"
+            I18N_ALL_HIDDEN="(모든 항목이 숨겨짐)"
+            I18N_SAVED="설정이 저장되었습니다."
+            I18N_NOT_SAVED="변경 사항이 저장되지 않았습니다."
+            I18N_SECTION_IDENTITY="[ 아이덴티티 ]"
+            I18N_SECTION_CAPABILITY="[ 기능 ]"
+            I18N_SECTION_HEALTH="[ 상태 ]"
+            I18N_SECTION_ACTIVITY="[ 활동 ]"
+            I18N_LAYOUT_LABEL="레이아웃"
+            I18N_ON="켜짐"
+            I18N_OFF="꺼짐"
+            I18N_CUSTOM="사용자"
+            I18N_DEFAULT="기본"
 
-        # Item labels (16-wide display alignment)
-        L_CWD="작업 디렉토리  "
-        L_PROJECT="프로젝트        "
-        L_BRANCH="Git 브랜치     "
-        L_GIT_STATUS="Git 상태       "
-        L_SESSION="세션 이름      "
-        L_WORKTREE="워크트리       "
-        L_MODEL="모델명          "
-        L_AGENT="에이전트        "
-        L_BAR="진행률 바       "
-        L_PERCENT="사용률 %        "
-        L_TOKENS="토큰 수         "
-        L_COST="비용            "
-        L_VELOCITY="코드 속도      "
-        L_RATE_5H="5시간 제한     "
-        L_RATE_7D="7일 제한       "
-        L_DURATION="세션 시간      "
-        L_CACHE="캐시 효율       "
-    else
-        I18N_TITLE="Claude Code Statusline Settings v7"
-        I18N_HELP="Arrows: Move | Space: Toggle | L: Layout | s: Save | q: Quit"
-        I18N_PREVIEW="Preview:"
-        I18N_ALL_HIDDEN="(All items hidden)"
-        I18N_SAVED="Settings saved."
-        I18N_NOT_SAVED="Changes not saved."
-        I18N_SECTION_IDENTITY="[ IDENTITY ]"
-        I18N_SECTION_CAPABILITY="[ CAPABILITY ]"
-        I18N_SECTION_HEALTH="[ HEALTH ]"
-        I18N_SECTION_ACTIVITY="[ ACTIVITY ]"
-        I18N_LAYOUT_LABEL="Layout"
-        I18N_LANG_LABEL="Language"
-        I18N_LANG_VALUE="English"
-        I18N_ON="ON "
-        I18N_OFF="OFF"
-        I18N_CUSTOM="CUSTOM"
-        I18N_DEFAULT="DEFAULT"
+            L_CWD="작업 디렉토리  "
+            L_PROJECT="프로젝트        "
+            L_BRANCH="Git 브랜치     "
+            L_GIT_STATUS="Git 상태       "
+            L_SESSION="세션 이름      "
+            L_WORKTREE="워크트리       "
+            L_MODEL="모델명          "
+            L_AGENT="에이전트        "
+            L_BAR="진행률 바       "
+            L_PERCENT="사용률 %        "
+            L_TOKENS="토큰 수         "
+            L_COST="비용            "
+            L_VELOCITY="코드 속도      "
+            L_RATE_5H="5시간 제한     "
+            L_RATE_7D="7일 제한       "
+            L_DURATION="세션 시간      "
+            L_CACHE="캐시 효율       "
+            ;;
+        zh)
+            I18N_TITLE="Claude Code Statusline 设置 v7"
+            I18N_HELP="↑↓ 移动 | Space 切换 | L 布局 | ←→ 语言 | s 保存 | q 退出"
+            I18N_PREVIEW="预览："
+            I18N_ALL_HIDDEN="(所有项目已隐藏)"
+            I18N_SAVED="设置已保存。"
+            I18N_NOT_SAVED="更改未保存。"
+            I18N_SECTION_IDENTITY="[ 身份 ]"
+            I18N_SECTION_CAPABILITY="[ 能力 ]"
+            I18N_SECTION_HEALTH="[ 状态 ]"
+            I18N_SECTION_ACTIVITY="[ 活动 ]"
+            I18N_LAYOUT_LABEL="布局"
+            I18N_ON="开 "
+            I18N_OFF="关"
+            I18N_CUSTOM="自定义"
+            I18N_DEFAULT="默认"
 
-        L_CWD="Directory   "
-        L_PROJECT="Project     "
-        L_BRANCH="Git Branch  "
-        L_GIT_STATUS="Git Status   "
-        L_SESSION="Session     "
-        L_WORKTREE="Worktree    "
-        L_MODEL="Model       "
-        L_AGENT="Agent       "
-        L_BAR="Progress Bar"
-        L_PERCENT="Usage %     "
-        L_TOKENS="Tokens      "
-        L_COST="Cost        "
-        L_VELOCITY="Velocity    "
-        L_RATE_5H="5h Rate     "
-        L_RATE_7D="7d Rate     "
-        L_DURATION="Duration    "
-        L_CACHE="Cache       "
-    fi
+            L_CWD="工作目录    "
+            L_PROJECT="项目        "
+            L_BRANCH="Git 分支    "
+            L_GIT_STATUS="Git 状态    "
+            L_SESSION="会话名称    "
+            L_WORKTREE="工作树      "
+            L_MODEL="模型        "
+            L_AGENT="代理        "
+            L_BAR="进度条      "
+            L_PERCENT="使用率 %    "
+            L_TOKENS="令牌数      "
+            L_COST="费用        "
+            L_VELOCITY="代码速度    "
+            L_RATE_5H="5小时限制   "
+            L_RATE_7D="7天限制     "
+            L_DURATION="会话时长    "
+            L_CACHE="缓存效率    "
+            ;;
+        ja)
+            I18N_TITLE="Claude Code Statusline 設定 v7"
+            I18N_HELP="↑↓ 移動 | Space 切替 | L レイアウト | ←→ 言語 | s 保存 | q 終了"
+            I18N_PREVIEW="プレビュー："
+            I18N_ALL_HIDDEN="(全項目非表示)"
+            I18N_SAVED="設定を保存しました。"
+            I18N_NOT_SAVED="変更は保存されませんでした。"
+            I18N_SECTION_IDENTITY="[ アイデンティティ ]"
+            I18N_SECTION_CAPABILITY="[ 機能 ]"
+            I18N_SECTION_HEALTH="[ 状態 ]"
+            I18N_SECTION_ACTIVITY="[ アクティビティ ]"
+            I18N_LAYOUT_LABEL="レイアウト"
+            I18N_ON="ON "
+            I18N_OFF="OFF"
+            I18N_CUSTOM="カスタム"
+            I18N_DEFAULT="デフォルト"
+
+            L_CWD="作業ディレクトリ"
+            L_PROJECT="プロジェクト    "
+            L_BRANCH="Git ブランチ   "
+            L_GIT_STATUS="Git ステータス "
+            L_SESSION="セッション名   "
+            L_WORKTREE="ワークツリー   "
+            L_MODEL="モデル          "
+            L_AGENT="エージェント    "
+            L_BAR="進捗バー        "
+            L_PERCENT="使用率 %        "
+            L_TOKENS="トークン数      "
+            L_COST="コスト          "
+            L_VELOCITY="コード速度     "
+            L_RATE_5H="5時間制限      "
+            L_RATE_7D="7日間制限      "
+            L_DURATION="セッション時間"
+            L_CACHE="キャッシュ効率  "
+            ;;
+        es)
+            I18N_TITLE="Claude Code Statusline Configuración v7"
+            I18N_HELP="↑↓ Mover | Space Alternar | L Diseño | ←→ Idioma | s Guardar | q Salir"
+            I18N_PREVIEW="Vista previa:"
+            I18N_ALL_HIDDEN="(Todos los elementos ocultos)"
+            I18N_SAVED="Configuración guardada."
+            I18N_NOT_SAVED="Cambios no guardados."
+            I18N_SECTION_IDENTITY="[ IDENTIDAD ]"
+            I18N_SECTION_CAPABILITY="[ CAPACIDAD ]"
+            I18N_SECTION_HEALTH="[ SALUD ]"
+            I18N_SECTION_ACTIVITY="[ ACTIVIDAD ]"
+            I18N_LAYOUT_LABEL="Diseño"
+            I18N_ON="SÍ "
+            I18N_OFF="NO"
+            I18N_CUSTOM="PERSONALIZADO"
+            I18N_DEFAULT="POR DEFECTO"
+
+            L_CWD="Directorio  "
+            L_PROJECT="Proyecto    "
+            L_BRANCH="Rama Git    "
+            L_GIT_STATUS="Estado Git  "
+            L_SESSION="Sesión      "
+            L_WORKTREE="Worktree    "
+            L_MODEL="Modelo      "
+            L_AGENT="Agente      "
+            L_BAR="Barra progr."
+            L_PERCENT="Uso %       "
+            L_TOKENS="Tokens      "
+            L_COST="Costo       "
+            L_VELOCITY="Velocidad   "
+            L_RATE_5H="Lím. 5h     "
+            L_RATE_7D="Lím. 7d     "
+            L_DURATION="Duración    "
+            L_CACHE="Caché       "
+            ;;
+        *)
+            I18N_TITLE="Claude Code Statusline Settings v7"
+            I18N_HELP="↑↓ Move | Space Toggle | L Layout | ←→ Language | s Save | q Quit"
+            I18N_PREVIEW="Preview:"
+            I18N_ALL_HIDDEN="(All items hidden)"
+            I18N_SAVED="Settings saved."
+            I18N_NOT_SAVED="Changes not saved."
+            I18N_SECTION_IDENTITY="[ IDENTITY ]"
+            I18N_SECTION_CAPABILITY="[ CAPABILITY ]"
+            I18N_SECTION_HEALTH="[ HEALTH ]"
+            I18N_SECTION_ACTIVITY="[ ACTIVITY ]"
+            I18N_LAYOUT_LABEL="Layout"
+            I18N_ON="ON "
+            I18N_OFF="OFF"
+            I18N_CUSTOM="CUSTOM"
+            I18N_DEFAULT="DEFAULT"
+
+            L_CWD="Directory   "
+            L_PROJECT="Project     "
+            L_BRANCH="Git Branch  "
+            L_GIT_STATUS="Git Status   "
+            L_SESSION="Session     "
+            L_WORKTREE="Worktree    "
+            L_MODEL="Model       "
+            L_AGENT="Agent       "
+            L_BAR="Progress Bar"
+            L_PERCENT="Usage %     "
+            L_TOKENS="Tokens      "
+            L_COST="Cost        "
+            L_VELOCITY="Velocity    "
+            L_RATE_5H="5h Rate     "
+            L_RATE_7D="7d Rate     "
+            L_DURATION="Duration    "
+            L_CACHE="Cache       "
+            ;;
+    esac
 }
 
 # ============================================
@@ -240,12 +347,31 @@ cycle_layout() {
 # ============================================
 # Language cycling
 # ============================================
-cycle_lang() {
-    if [ "$CLAUDE_SL_LANG" = "ko" ]; then
-        CLAUDE_SL_LANG=en
-    else
-        CLAUDE_SL_LANG=ko
-    fi
+cycle_lang_next() {
+    local i
+    for i in "${!LANGS[@]}"; do
+        if [ "$CLAUDE_SL_LANG" = "${LANGS[$i]}" ]; then
+            local next=$(( (i + 1) % ${#LANGS[@]} ))
+            CLAUDE_SL_LANG="${LANGS[$next]}"
+            set_i18n
+            return
+        fi
+    done
+    CLAUDE_SL_LANG="${LANGS[0]}"
+    set_i18n
+}
+
+cycle_lang_prev() {
+    local i
+    for i in "${!LANGS[@]}"; do
+        if [ "$CLAUDE_SL_LANG" = "${LANGS[$i]}" ]; then
+            local prev=$(( (i - 1 + ${#LANGS[@]}) % ${#LANGS[@]} ))
+            CLAUDE_SL_LANG="${LANGS[$prev]}"
+            set_i18n
+            return
+        fi
+    done
+    CLAUDE_SL_LANG="${LANGS[0]}"
     set_i18n
 }
 
@@ -271,7 +397,7 @@ EOF
         fi
     done
     echo "" >> "$CONFIG_FILE"
-    echo "# Language (ko/en)" >> "$CONFIG_FILE"
+    echo "# Language (en/ko/zh/ja/es)" >> "$CONFIG_FILE"
     echo "export CLAUDE_SL_LANG=$CLAUDE_SL_LANG" >> "$CONFIG_FILE"
 
     echo ""
@@ -298,7 +424,19 @@ draw_menu() {
     echo -e "${BOLD}╚══════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
     echo -e "${DIM}  ${I18N_HELP}${RESET}"
-    echo -e "  ${I18N_LAYOUT_LABEL}: ${layout_display}    ${I18N_LANG_LABEL}: ${CYAN}${I18N_LANG_VALUE}${RESET}"
+    echo -e "  ${I18N_LAYOUT_LABEL}: ${layout_display}"
+    echo ""
+
+    # Language bar — each language in its own script, active one highlighted
+    local lang_bar="  "
+    for i in "${!LANGS[@]}"; do
+        if [ "$CLAUDE_SL_LANG" = "${LANGS[$i]}" ]; then
+            lang_bar="${lang_bar}${BOLD}${CYAN}${LANG_DISPLAY[$i]}${RESET}  "
+        else
+            lang_bar="${lang_bar}${DIM}${LANG_DISPLAY[$i]}${RESET}  "
+        fi
+    done
+    echo -e "$lang_bar"
     echo ""
 
     # Parse section headers
@@ -452,6 +590,8 @@ read_key() {
         case "$key" in
             '[A') echo "UP" ;;
             '[B') echo "DOWN" ;;
+            '[C') echo "LANG_NEXT" ;;
+            '[D') echo "LANG_PREV" ;;
             *) echo "" ;;
         esac
     elif [[ $key == '' || $key == ' ' ]]; then
@@ -503,6 +643,12 @@ main() {
                 ;;
             LAYOUT)
                 cycle_layout
+                ;;
+            LANG_NEXT)
+                cycle_lang_next
+                ;;
+            LANG_PREV)
+                cycle_lang_prev
                 ;;
             SAVE)
                 stty echo

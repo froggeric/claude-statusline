@@ -145,11 +145,13 @@ LANG_CODE=${CLAUDE_SL_LANG:-en}
 # ============================================
 # Language strings
 # ============================================
-if [ "$LANG_CODE" = "ko" ]; then
-    TEXT_COMPRESSED="압축됨"
-else
-    TEXT_COMPRESSED="COMPRESSED"
-fi
+case "$LANG_CODE" in
+    ko) TEXT_COMPRESSED="압축됨" ;;
+    zh) TEXT_COMPRESSED="已压缩" ;;
+    ja) TEXT_COMPRESSED="圧縮済み" ;;
+    es) TEXT_COMPRESSED="COMPRIMIDO" ;;
+    *)  TEXT_COMPRESSED="COMPRESSED" ;;
+esac
 
 # Debug mode
 if [ "${CLAUDE_STATUSLINE_DEBUG:-0}" = "1" ]; then
