@@ -334,7 +334,7 @@ get_git_info() {
 GIT_BRANCH_CACHED=""
 GIT_STAGED=0
 GIT_MODIFIED=0
-if [ "$CLAUDE_SL_BRANCH" = "1" ]; then
+if [ "$CLAUDE_SL_BRANCH" = "1" ] || [ "$CLAUDE_SL_GIT_STATUS" = "1" ]; then
     get_git_info "$CURRENT_DIR" "$SESSION_ID"
 fi
 # Ensure numeric values for git status
@@ -602,6 +602,11 @@ if [ "$CLAUDE_SL_BRANCH" = "1" ] && [ -n "$GIT_BRANCH_CACHED" ]; then
         [ "${GIT_MODIFIED:-0}" -gt 0 ] 2>/dev/null && local_branch="${local_branch} ${YELLOW}~${GIT_MODIFIED}${RESET}"
     fi
     append_chunk CHUNK_IDENTITY "$local_branch"
+elif [ "$CLAUDE_SL_GIT_STATUS" = "1" ]; then
+    local_status=""
+    [ "${GIT_STAGED:-0}" -gt 0 ] 2>/dev/null && local_status="${local_status}${GREEN}+${GIT_STAGED}${RESET}"
+    [ "${GIT_MODIFIED:-0}" -gt 0 ] 2>/dev/null && local_status="${local_status}${local_status:+ }${YELLOW}~${GIT_MODIFIED}${RESET}"
+    [ -n "$local_status" ] && append_chunk CHUNK_IDENTITY "$local_status"
 fi
 
 # Session name
